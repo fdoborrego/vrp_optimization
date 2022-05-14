@@ -29,10 +29,11 @@ class GraphicsBuilder(object):
     def __str__(self):
         return "Graphics Builder: %s problem. " % self.problem_type
 
-    def graph_veh_distance(self, vehicles):
+    def graph_veh_distance(self, vehicles, method):
         """
         Gráfica que representa la distancia de trayecto de cada vehículo.
         :param vehicles: Estructura de datos que contiene la información de los vehículos.
+        :param method: Método usado en el proceso de optimización.
         """
 
         # Captura de datos
@@ -61,15 +62,16 @@ class GraphicsBuilder(object):
         plt.show()
 
         # Guardado
-        fig.savefig(self.path + '/' + self.problem_type + '_VEH_distancia.png')
+        fig.savefig(self.path + '/' + self.problem_type + '_' + method + '_VEH_distancia.png')
 
         # Cierre
         plt.close()
 
-    def graph_veh_time(self, vehicles):
+    def graph_veh_time(self, vehicles, method):
         """
         Gráfica que representa el tiempo de trayecto de cada vehículo.
         :param vehicles: Estructura de datos que contiene la información de los vehículos.
+        :param method: Método usado en el proceso de optimización.
         """
 
         # Captura de datos
@@ -98,15 +100,16 @@ class GraphicsBuilder(object):
         plt.show()
 
         # Guardado
-        fig.savefig(self.path + '/' + self.problem_type + '_VEH_tiempo.png')
+        fig.savefig(self.path + '/' + self.problem_type + '_' + method + '_VEH_tiempo.png')
 
         # Cierre
         plt.close()
 
-    def graph_veh_capacity(self, vehicles):
+    def graph_veh_capacity(self, vehicles, method):
         """
         Gráfica que representa la capacidad de cada vehículo de la solución.
         :param vehicles: Estructura de datos que contiene la información de los vehículos.
+        :param method: Método usado en el proceso de optimización.
         """
 
         # Captura de datos
@@ -135,16 +138,17 @@ class GraphicsBuilder(object):
         plt.show()
 
         # Guardado
-        fig.savefig(self.path + '/' + self.problem_type + '_VEH_capacidad.png')
+        fig.savefig(self.path + '/' + self.problem_type + '_' + method + '_VEH_capacidad.png')
 
         # Cierre
         plt.close()
 
-    def graph_routes(self, routes, depots):
+    def graph_routes(self, routes, depots, method):
         """
         Salida gráfica de la representación de las rutas que conforman una solución.
         :param routes: Solución construida (contiene lista con los índices de las paradas según vehículos).
         :param depots: Índice de cliente de los depósitos.
+        :param method: Método usado en el proceso de optimización.
         """
         # Parámetros de entrada
         data = self.data
@@ -217,7 +221,7 @@ class GraphicsBuilder(object):
         plt.show()
 
         # Guardado
-        fig.savefig(self.path + '/' + self.problem_type + '_SOL_rutas.png')
+        fig.savefig(self.path + '/' + self.problem_type + '_' + method + '_SOL_rutas.png')
 
         # Cierre
         plt.close()

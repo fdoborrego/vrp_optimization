@@ -8,6 +8,7 @@ These files present the implementation of three different optimization problems:
 
 * Bruteforce (BF)
 * Nearest Neighbour (NN)
+* Cost Saving (CS)
 * Local Search (LS)
 * Variable Neighbourhood Search (VNS) and Descendant (VND)
 * Simulated Annealing (SA)
@@ -26,6 +27,7 @@ The following optimization problems have been considered:
 The following optimization algorithm have been studied:
 * Bruteforce (BF)
 * Nearest Neighbour (NN)
+* Cost Saving (CS)
 * Local Search (LS)
 * Variable Neighbourhood Search (VNS) and Descendant (VND)
 * Simulated Annealing (SA)

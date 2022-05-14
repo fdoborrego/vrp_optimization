@@ -1,6 +1,6 @@
 # Solver del problema de optimización.
 
-import time
+import timer
 import logging
 import heuristics
 import graphbuild
@@ -22,6 +22,12 @@ class OptimizationSolver(object):
     formatterConsole = logging.Formatter('%(levelname)s - %(message)s')
     consoleh.setFormatter(formatterConsole)  # Formato de salida
     logger.addHandler(consoleh)
+
+    fileh = logging.FileHandler('../log/solver_log.log')
+    fileh.setLevel(logging.INFO)
+    formatterFile = logging.Formatter('%(levelname)s - %(message)s')
+    fileh.setFormatter(formatterFile)
+    logger.addHandler(fileh)
 
     # Parámetros
     problem = 'TBD'     # = To Be Defined
@@ -51,6 +57,9 @@ class OptimizationSolver(object):
 
         # Constructor de gráficos
         self.graphbuilder = graphbuild.GraphicsBuilder(self.problem, data)
+
+        # Timer
+        self.timer = timer.Timer(max_time=5)
 
     def __repr__(self):
         return "<[%s] C%.0f T%.0f V%.0f>" % (self.problem, self.max_capacity, self.max_time, self.max_vehicles)
@@ -86,55 +95,57 @@ class OptimizationSolver(object):
         :return: dt: Tiempo tomado por el algoritmo en el proceso de optimización.
         """
 
+        # Inicialización
         solution = []
         solution_value = 'inf'
         history = []
 
-        tic = time.process_time()
+        # Inicio de temporizador
+        self.timer.reset()
+        self.timer.start()
 
+        # Algoritmos de optimización
         if method == "Bruteforce":
-            solution, solution_value, history = \
-                heuristics.bruteforce(initial_solution, self.data, self.evalfun, start=self.depots)
+            solution, solution_value, history = heuristics.bruteforce(self, initial_solution, start=self.depots)
 
         elif method == "Nearest Neighbour":
-            solution, solution_value, history = \
-                heuristics.nearest_neighbor(initial_solution, self.data, self.evalfun, start=self.depots)
+            solution, solution_value, history = heuristics.nearest_neighbor(self, initial_solution, start=self.depots)
 
         elif method == 'Cost Saving':
-            solution, solution_value, history = \
-                heuristics.cost_saving(initial_solution, self.data, self.evalfun, start=self.depots)
+            solution, solution_value, history = heuristics.cost_saving(self, initial_solution, start=self.depots)
 
         elif method == 'Local Search (SWAP)':
-            solution, solution_value, history = \
-                heuristics.local_search(initial_solution, self.data, self.evalfun, operator='swap')
+            solution, solution_value, history = heuristics.local_search(self, initial_solution, operator='swap')
 
         elif method == 'Local Search (INSERTION)':
-            solution, solution_value, history = \
-                heuristics.local_search(initial_solution, self.data, self.evalfun, operator='insertion')
+            solution, solution_value, history = heuristics.local_search(self, initial_solution, operator='insertion')
 
         elif method == 'VND':
-            solution, solution_value, history = heuristics.vnd(initial_solution, self.data, self.evalfun)
+            solution, solution_value, history = heuristics.vnd(self, initial_solution)
 
         elif method == 'VNS':
-            solution, solution_value, history = heuristics.vns(initial_solution, self.data, self.evalfun)
+            solution, solution_value, history = heuristics.vns(self, initial_solution)
 
         elif method == 'Simulated Annealing':
-            solution, solution_value, history = \
-                heuristics.simulated_annealing(initial_solution, self.data, self.evalfun)
+            solution, solution_value, history = heuristics.simulated_annealing(self, initial_solution)
 
         elif method == 'Tabu Search':
-            solution, solution_value, history = heuristics.tabu_search(initial_solution, self.data, self.evalfun)
+            solution, solution_value, history = heuristics.tabu_search(self, initial_solution)
 
         else:
-            self.logger.error('[SOLVE] El método introducido (' + method + ') no es válido.')
+            self.logger.error('[' + self.problem + '][SOLVE] El método introducido (' + method + ') no es válido.')
             exit()
 
-        toc = time.process_time()
-        dt = toc - tic
-
-        self.logger.info(
-            '[SOLVE] ' + method + ' Method (' + str(dt) + ' s) -> Valor: ' + str(solution_value) + '; Solución: '
-            + str(solution))
+        # Fin de temporizador y resultado
+        dt = self.timer.stop()
+        if self.timer.check():
+            self.logger.warning(
+                '[' + self.problem + '][SOLVE - ' + method + '] Optimización abortada (' + str(dt) +
+                ' s) -> Valor: ' + str(solution_value) + '; Solución: ' + str(solution) + '.')
+        else:
+            self.logger.info(
+                '   [' + self.problem + '][SOLVE - ' + method + '] Optimización finalizada (' + str(dt) +
+                ' s) -> Valor: ' + str(solution_value) + '; Solución: ' + str(solution) + '.')
 
         self.set_solution(solution, history, method)
 
@@ -159,20 +170,32 @@ class OptimizationSolver(object):
         Representación gráfica de la solución del problema de optimización.
         """
 
+        if self.solution_value == float('inf'):
+            self.logger.error('  [' + self.problem + '][GRAPH - ' + self.method +
+                              '] Solución no válida. No es posible representar.')
+            return
+
         # Representación
         self.graphbuilder.graph_history(self.solution_value_history, self.method)
 
         if self.problem == 'TSP':
-            self.graphbuilder.graph_routes(self.solution_route, self.depots)
+            self.graphbuilder.graph_routes(self.solution_route, self.depots, self.method)
         elif self.problem == 'CVRP':
-            self.graphbuilder.graph_routes(self.solution_route, self.depots)
-            self.graphbuilder.graph_veh_distance(self.solution_vehicles)
-            self.graphbuilder.graph_veh_time(self.solution_vehicles)
-            self.graphbuilder.graph_veh_capacity(self.solution_vehicles)
+            self.graphbuilder.graph_routes(self.solution_route, self.depots, self.method)
+            self.graphbuilder.graph_veh_distance(self.solution_vehicles, self.method)
+            self.graphbuilder.graph_veh_time(self.solution_vehicles, self.method)
+            self.graphbuilder.graph_veh_capacity(self.solution_vehicles, self.method)
         elif self.problem == 'VRPTW':
-            self.graphbuilder.graph_routes(self.solution_route, self.depots)
-            self.graphbuilder.graph_veh_distance(self.solution_vehicles)
-            self.graphbuilder.graph_veh_time(self.solution_vehicles)
+            self.graphbuilder.graph_routes(self.solution_route, self.depots, self.method)
+            self.graphbuilder.graph_veh_distance(self.solution_vehicles, self.method)
+            self.graphbuilder.graph_veh_time(self.solution_vehicles, self.method)
+
+    def set_timer(self, max_time):
+        """
+        Establecimiento de tiempo de ejecución máximo admisible de un algoritmo de optimización.
+        :param max_time: Tiempo máximo de ejecución.
+        """
+        self.timer.set(max_time)
 
     @staticmethod
     def distance(point1, point2):
@@ -326,7 +349,7 @@ class CVRPSolver(OptimizationSolver):
         if (dim_sol > 0) and (total_customers == dim_sol):
             solution_value = total_vehicles * cost_vehicles + total_dist * cost_km
         elif dim_sol == 0:
-            solution_value = 0
+            solution_value = float('inf')
         else:  # total_customers != dim_sol
             routes = []
             solution_value = float('inf')
@@ -440,7 +463,7 @@ class VRPTWSolver(OptimizationSolver):
         if (dim_sol > 0) and (total_customers == dim_sol):
             solution_value = total_vehicles * cost_vehicles + total_dist * cost_km
         elif dim_sol == 0:
-            solution_value = 0
+            solution_value = float('inf')
         else:  # total_customers != dim_sol
             routes = []
             solution_value = float('inf')

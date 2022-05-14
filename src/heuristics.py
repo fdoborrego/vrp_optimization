@@ -16,12 +16,17 @@ def distance(point1, point2):
     return ((point1[0] - point2[0]) ** 2 + (point1[1] - point2[1]) ** 2) ** 0.5
 
 
-def bruteforce(solution, data, eval_function, start=None):
+def bruteforce(optimizer, solution, start=None):
     """
     Método de fuerza bruta.
     Este método realiza una exploración de todas las posibles soluciones del problema para buscar la óptima entre
     todas ellas.
     """
+
+    # Datos de entrada
+    data = optimizer.data
+    eval_function = optimizer.evalfun
+    timer = optimizer.timer
 
     # Inicialización
     best_solution_value, best_solution, _, _ = eval_function(solution, data)
@@ -33,6 +38,10 @@ def bruteforce(solution, data, eval_function, start=None):
 
     # Exploración de todas las posibles soluciones
     for perm in permutations(solution):
+
+        # Comprobación de tiempo máximo
+        if timer.update():
+            return best_solution, best_solution_value, solution_values
 
         # Solo se consideran válidas las que comienzan por "start" (en este caso el depósito)
         if perm[0] == fixed:
@@ -49,16 +58,21 @@ def bruteforce(solution, data, eval_function, start=None):
     return best_solution, best_solution_value, solution_values
 
 
-def nearest_neighbor(solution, data, eval_function, start=None):
+def nearest_neighbor(optimizer, solution, start=None):
     """
     Método del vecino más cercano.
     Este método realiza una construcción de una solución subóptima. Para ello, une consecutivamente aquellos puntos más
     cercanos entre sí.
     """
 
+    # Datos de entrada
+    data = optimizer.data
+    eval_function = optimizer.evalfun
+    timer = optimizer.timer
+
     # Inicialización
     best_solution_value, best_solution, _, _ = eval_function(solution, data)
-    solution_values = []
+    solution_values = [best_solution_value]
 
     if start is not None:
         solution = start + solution
@@ -76,20 +90,27 @@ def nearest_neighbor(solution, data, eval_function, start=None):
 
     # Resultados
     best_solution_value, best_solution, _, _ = eval_function(path[1:], data)
+    solution_values.append(best_solution_value)
+    timer.update()
 
     return best_solution, best_solution_value, solution_values
 
 
-def cost_saving(solution, data, eval_function, start=None):
+def cost_saving(optimizer, solution, start=None):
     """
     Método del ahorro de costes.
     Este método realiza una construcción de una solución subóptima. Para ello, se incorporan a la solución aquellos
     arcos de menor coste y que sean compatibles con las restricciones (= no formen ciclos).
     """
 
+    # Datos de entrada
+    data = optimizer.data
+    eval_function = optimizer.evalfun
+    timer = optimizer.timer
+
     # Inicialización
     best_solution_value, _, best_solution, _ = eval_function(solution, data)
-    solution_values = []
+    solution_values = [best_solution_value]
 
     if start is not None:
         solution = start + solution
@@ -139,6 +160,8 @@ def cost_saving(solution, data, eval_function, start=None):
 
     # Resultados
     best_solution_value, best_solution, _, _ = eval_function(path[1:], data)
+    solution_values.append(best_solution_value)
+    timer.update()
 
     return best_solution, best_solution_value, solution_values
 
@@ -227,23 +250,32 @@ def _arcs2nodes(arcs, start=None):
     return nodes
 
 
-def local_search(solution, data, eval_function, operator='swap'):
+def local_search(optimizer, solution, operator='swap'):
     """
     Método de la búsqueda local (o método del gradiente).
     Este método realiza una exploración de aquel espacio de soluciones alcanzable mediante un operador de vecindad. Una
     vez encontrado un óptimo local, se detiene la exploración y se devuelve la solución encontrada.
     """
 
+    # Datos de entrada
+    data = optimizer.data
+    eval_function = optimizer.evalfun
+    timer = optimizer.timer
+
     # Inicialización
-    current_solution_value, current_solution, current_route, _ = eval_function(solution, data)
+    current_solution_value, current_solution, _, _ = eval_function(solution, data)
     neighbourhood = []
 
     best_solution_value = current_solution_value
-    best_solution = current_route
+    best_solution = current_solution
     solutions = [current_solution_value]
 
     # Búsqueda del óptimo local
     while True:
+
+        # Comprobación de tiempo máximo
+        if timer.update():
+            return best_solution, best_solution_value, solutions
 
         # Cálculo de nueva vecindad
         if operator == 'swap':
@@ -265,7 +297,7 @@ def local_search(solution, data, eval_function, operator='swap'):
         else:
             break
 
-        # Actualización dle bucle
+        # Actualización del bucle
         current_solution = new_solution
 
     return best_solution, best_solution_value, solutions
@@ -324,7 +356,7 @@ def _neighbourhood_insertion(solution):
     return neighbourhood
 
 
-def vnd(solution, data, eval_function):
+def vnd(optimizer, solution):
     """
     Método de búsqueda de entorno variable (VNS) descendiente.
     Este método consiste en una metaheurística que extiende el método de búsqueda local utilizando varias vecindades. De
@@ -332,10 +364,15 @@ def vnd(solution, data, eval_function):
     pueda hallarse un nuevo óptimo.
     """
 
+    # Datos de entrada
+    data = optimizer.data
+    eval_function = optimizer.evalfun
+    timer = optimizer.timer
+
     # Inicialización
     current_solution_value, current_solution, current_route, _ = eval_function(solution, data)
 
-    best_solution = current_route
+    best_solution = current_solution
     best_solution_value = current_solution_value
     solutions = [current_solution_value]
 
@@ -346,9 +383,13 @@ def vnd(solution, data, eval_function):
     # Algoritmo VND
     while k <= len(operators):
 
+        # Comprobación de tiempo máximo
+        if timer.update():
+            return best_solution, best_solution_value, solutions
+
         # Búsqueda local
         new_solution, new_solution_value, solutions_ls = \
-            local_search(current_solution, data, eval_function, operator=operators[k - 1])
+            local_search(optimizer, current_solution, operator=operators[k - 1])
 
         solutions.extend(solutions_ls)
 
@@ -368,7 +409,7 @@ def vnd(solution, data, eval_function):
     return best_solution, best_solution_value, solutions
 
 
-def vns(solution, data, eval_function):
+def vns(optimizer, solution):
     """
     Método de búsqueda de entorno variable (VNS).
     Este método consiste en una metaheurística que extiende el método de búsqueda local utilizando varias vecindades. De
@@ -378,10 +419,15 @@ def vns(solution, data, eval_function):
     brusco en la solución al atascarse en un óptimo local. Esto le permitirá una mayor exploración al mismo.
     """
 
-    # Inicialización
-    current_solution_value, current_solution, current_route, _ = eval_function(solution, data)
+    # Datos de entrada
+    data = optimizer.data
+    eval_function = optimizer.evalfun
+    timer = optimizer.timer
 
-    best_solution = current_route
+    # Inicialización
+    current_solution_value, current_solution, _, _ = eval_function(solution, data)
+
+    best_solution = current_solution
     best_solution_value = current_solution_value
     solutions = [current_solution_value]
 
@@ -392,12 +438,16 @@ def vns(solution, data, eval_function):
     # Algoritmo VND
     while k <= len(operators):
 
+        # Comprobación de tiempo máximo
+        if timer.update():
+            return best_solution, best_solution_value, solutions
+
         # Shaking
         current_solution = _shaking(current_solution)
 
         # Búsqueda local
         new_solution, new_solution_value, solutions_ls = \
-            local_search(current_solution, data, eval_function, operator=operators[k - 1])
+            local_search(optimizer, current_solution, operator=operators[k - 1])
 
         solutions.extend(solutions_ls)
 
@@ -430,7 +480,7 @@ def _shaking(solution):
     return new_solution
 
 
-def simulated_annealing(solution, data, eval_function):
+def simulated_annealing(optimizer, solution):
     """
     Método de recocido simulado.
     Este método consiste en una metaheurística que permite al algoritmo alejarse de la solución óptima encontrada
@@ -441,11 +491,16 @@ def simulated_annealing(solution, data, eval_function):
     algoritmo tendrá cierta probabilidad de saltar hacia ella (en función de la temperatura antes mencionada).
     """
 
+    # Datos de entrada
+    data = optimizer.data
+    eval_function = optimizer.evalfun
+    timer = optimizer.timer
+
     # Parámetros del algoritmo
-    max_temp = 50
+    max_temp = 100
     min_temp = 1
     L = 10
-    alpha = 0.01
+    alpha = 0.001
 
     # Inicialización
     temp = max_temp
@@ -468,6 +523,10 @@ def simulated_annealing(solution, data, eval_function):
 
             # Evaluación de la vecindad
             for i in range(len(neighbourhood)):
+
+                # Comprobación de tiempo máximo
+                if timer.update():
+                    return best_solution, best_solution_value, solutions
 
                 new_solution_value, new_solution, _, _ = eval_function(neighbourhood[order[i]], data)
 
@@ -500,7 +559,7 @@ def simulated_annealing(solution, data, eval_function):
     return best_solution, best_solution_value, solutions
 
 
-def tabu_search(solution, data, eval_function):
+def tabu_search(optimizer, solution):
     """
     Método de búsqueda tabú.
     Este método consiste en una metaheurística que, partiendo de una solución inicial, construye un entorno de
@@ -508,6 +567,11 @@ def tabu_search(solution, data, eval_function):
     restricciones basadas en memorias de lo reciente y lo frecuente y a niveles de aspiración (excepciones a estas
     restricciones).
     """
+
+    # Datos de entrada
+    data = optimizer.data
+    eval_function = optimizer.evalfun
+    timer = optimizer.timer
 
     # Parámetros del algoritmo
     tabu_size = len(solution) / 2
@@ -526,6 +590,10 @@ def tabu_search(solution, data, eval_function):
 
     # Búsqueda de la mejor solución
     for _ in range(n_iteration):
+
+        # Comprobación de tiempo máximo
+        if timer.update():
+            return best_solution, best_solution_value, solutions
 
         # Creación de vecindad: swap
         swap = []                               # Swaps realizados
