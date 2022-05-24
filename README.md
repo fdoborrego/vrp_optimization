@@ -40,7 +40,6 @@ The file structure of the current project is the following:
     |-- README.md
     |-- LICENSE
     |-- requirements.txt
-    |-- setup.py
     |-- data
         |-- Datos.txt
     |-- src

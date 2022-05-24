@@ -176,10 +176,10 @@ class GraphicsBuilder(object):
         x_max, y_max = 0, 0
 
         # Representación del depósito
-        ax.scatter(data['x_coord'][depositos], data['x_coord'][depositos], color='k', marker='D', linewidths=5,
+        ax.scatter(data['x_coord'][depositos], data['y_coord'][depositos], color='k', marker='D', linewidths=5,
                    label='Depósito')
-        ax.text(data['x_coord'][depositos], data['x_coord'][depositos],
-                " Depósito: (" + str(data['x_coord'][depositos]) + ', ' + str(data['x_coord'][depositos]) + ')')
+        ax.text(data['x_coord'][depositos], data['y_coord'][depositos],
+                " Depósito: (" + str(data['x_coord'][depositos]) + ', ' + str(data['y_coord'][depositos]) + ')')
 
         # Representación de rutas de vehículos
         for i, vehicle_route in enumerate(routes):
@@ -197,7 +197,7 @@ class GraphicsBuilder(object):
                     y_max = y_coord[-1]
 
             # Representación de la ruta seguida
-            line, = ax.plot([*x_coord, data['x_coord'][depositos]], [*y_coord, data['x_coord'][depositos]],
+            line, = ax.plot([*x_coord, data['x_coord'][depositos]], [*y_coord, data['y_coord'][depositos]],
                             linestyle=next(linestyle_tuple))
 
             # Representación de las coordenadas
