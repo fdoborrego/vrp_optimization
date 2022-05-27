@@ -28,7 +28,7 @@ logger_main.addHandler(fileh)
 def main():
 
     # Lectura de datos
-    data, max_capacity, max_time, max_vehicles, depots = utils.read_file("../data/Datos.txt", 30)
+    data, max_capacity, max_time, max_vehicles, depots = utils.read_file("../data/Datos1000.txt", 100)
     max_timer = 5
 
     # Definición del problema
