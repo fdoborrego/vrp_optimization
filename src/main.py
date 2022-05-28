@@ -29,7 +29,7 @@ def main():
 
     # Lectura de datos
     data, max_capacity, max_time, max_vehicles, depots = utils.read_file("../data/Datos1000.txt", 100)
-    max_timer = 5
+    max_timer = 20
 
     # Definición del problema
     tsp = solver.TSPSolver(data, depots=depots)
@@ -46,9 +46,9 @@ def main():
     # Resolución del problema
     initial_solution = list(range(1, len(data['customer'])))
 
-    # methods = ['Simulated Annealing', 'Tabu Search']
     methods = ['Bruteforce', 'Nearest Neighbour', 'Cost Saving', 'Local Search (SWAP)', 'Local Search (INSERTION)',
                'VND', 'VNS', 'Simulated Annealing', 'Tabu Search']
+    # methods = ['VNS']
 
     initial_solution, _, _, _ = cvrp.solve(initial_solution, 'Nearest Neighbour')
     for method in methods:

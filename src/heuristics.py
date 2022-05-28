@@ -328,8 +328,8 @@ def _neighbourhood_swap_p(solution, p=0.2):
 
     # Construcción de vecinos
     N = math.floor(p * len(solution))
-    for i in range(len(solution) - 1 + N):
-        for j in range(i + 1 + N, len(solution)):
+    for i in range(len(solution) - N - 1):
+        for j in range(i + N + 1, len(solution) - N):
             neighbour = solution[:]
             neighbour[i:i + N], neighbour[j:j + N] = neighbour[j:j + N], neighbour[i:i + N]
 
